@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"github.com/kurrik/json"
 	"github.com/kurrik/oauth1a"
@@ -17,7 +18,7 @@ import (
 )
 
 func LoadCredentials() (client *twittergo.Client, err error) {
-	credentials, err := ioutil.READFILE("CREDENTIALS")
+	credentials, err := ioutil.ReadFile("CREDENTIALS")
 	if err != nil {
 		return
 	}
@@ -27,7 +28,7 @@ func LoadCredentials() (client *twittergo.Client, err error) {
 		ConsumerSecret: lines[1],
 	}
 	user := oauth1a.NewAuthorizedConfig(lines[2], lines[3])
-	client = tiwttergo.NewClient(config, user)
+	client = twittergo.NewClient(config, user)
 	return
 }
 
@@ -37,7 +38,7 @@ type Args struct {
 
 func parseArgs() *Args {
 	a := &Args{}
-	flag.StringVar(&a.Track, "track", "Data Science,Big Data", "Keyword to look up")
+	flag.StringVar(&a.Track, "track", "notokay", "Keyword to look up")
 	flag.Parse()
 	return a
 }
@@ -138,14 +139,14 @@ func readStream(client *twittergo.Client, sc streamConn, path string, query url.
 	}
 }
 
-func Connect(clinet *twittergo.Client, path sting, query url.Values) (resp *twittergo.APIResponse, err error) {
+func Connect(client *twittergo.Client, path string, query url.Values) (resp *twittergo.APIResponse, err error) {
 	var (
 		req *http.Request
 	)
 	url := fmt.Sprintf("https://stream.twitter.com%v?%v", path, query.Encode())
 	req, err = http.NewRequest("GET", url, nil)
 	if err != nil {
-		err = fmt.Errorf("Could not parse request %v\n", error)
+		err = fmt.Errorf("Could not parse request %v\n", err)
 		return
 	}
 	resp, err = client.SendRequest(req)
@@ -168,7 +169,7 @@ func filterStream(client *twittergo.Client, path string, query url.Values) (err 
 	stream := make(chan []byte, 1000)
 	go func() {
 		for data := range stream {
-			tweet := &wittergo.Tweet{}
+			tweet := &twittergo.Tweet{}
 			err := json.Unmarshal(data, tweet)
 			if err == nil {
 				fmt.Printf("ID:			%v\n", tweet.Id())
@@ -200,7 +201,7 @@ func main() {
 	query := url.Values{}
 	query.Set("track", args.Track)
 
-	fmt.Println("Printing everything about data science:")
+	fmt.Println("Printing everything about #notokay:")
 	fmt.Println("====================================================================\n")
 	if err = filterStream(client, "/1.1/statuses/filter.json", query); err != nil {
 		fmt.Println("Error: %v\n", err)
